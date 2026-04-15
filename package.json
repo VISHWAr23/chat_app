@@ -4,7 +4,7 @@
   "description": "Real-time chat backend with NestJS, Socket.IO, Redis, and MongoDB",
   "scripts": {
     "build": "nest build",
-    "start": "nest start",
+    "start": "node dist/main",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main"
   },
