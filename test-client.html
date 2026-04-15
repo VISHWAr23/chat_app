@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat Test Client</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { font-family: monospace; max-width: 700px; margin: 40px auto; background: #1e1e1e; color: #d4d4d4; }
+    h2 { color: #4ec9b0; }
+    input, button { padding: 6px 10px; margin: 4px; border-radius: 4px; border: 1px solid #555; background: #2d2d2d; color: #d4d4d4; }
+    button { cursor: pointer; background: #0e639c; border-color: #0e639c; color: white; }
+    button:hover { background: #1177bb; }
+    #log { background: #252526; border: 1px solid #444; padding: 12px; height: 300px; overflow-y: auto; border-radius: 4px; font-size: 13px; }
+    .event { color: #9cdcfe; } .error { color: #f44747; } .msg { color: #b5cea8; }
+    label { color: #9cdcfe; }
+  </style>
+</head>
+<body>
+  <h2>🧪 NestJS Chat Test Client</h2>
+
+  <div>
+    <label>Server URL:</label>
+    <input id="serverUrl" value="http://localhost:3000" style="width:220px" />
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+  </div>
+
+  <div style="margin-top:12px">
+    <label>Your User ID:</label>
+    <input id="userId" placeholder="e.g. alice" />
+    <button onclick="join()">Join</button>
+  </div>
+
+  <div style="margin-top:12px">
+    <label>To User ID:</label>
+    <input id="receiverId" placeholder="e.g. bob" />
+    <br/>
+    <label>Message:</label>
+    <input id="messageText" placeholder="Hello!" style="width:200px" />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <div style="margin-top:12px">
+    <label>Get History between:</label>
+    <input id="h1" placeholder="userId1" />
+    <input id="h2" placeholder="userId2" />
+    <button onclick="getHistory()">Get History</button>
+  </div>
+
+  <div style="margin-top:16px">
+    <strong>Event Log:</strong>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    let socket;
+
+    function log(msg, cls = '') {
+      const el = document.getElementById('log');
+      el.innerHTML += `<div class="${cls}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function connect() {
+      const url = document.getElementById('serverUrl').value;
+      socket = io(url, { transports: ['websocket'] });
+      socket.on('connect', () => log(`✅ Connected (${socket.id})`, 'event'));
+      socket.on('disconnect', () => log('❌ Disconnected', 'error'));
+      socket.on('joined', d => log(`joined: ${JSON.stringify(d)}`, 'event'));
+      socket.on('receiveMessage', d => log(`📩 receiveMessage: ${JSON.stringify(d)}`, 'msg'));
+      socket.on('messageSent', d => log(`✔ messageSent: ${JSON.stringify(d)}`, 'event'));
+      socket.on('chatHistory', d => log(`📜 chatHistory (${d.messages.length} msgs): ${JSON.stringify(d.messages)}`, 'msg'));
+      socket.on('error', d => log(`⚠ error: ${JSON.stringify(d)}`, 'error'));
+    }
+
+    function disconnect() { socket && socket.disconnect(); }
+    function join() { socket.emit('join', { userId: document.getElementById('userId').value }); }
+    function sendMessage() {
+      socket.emit('sendMessage', {
+        senderId: document.getElementById('userId').value,
+        receiverId: document.getElementById('receiverId').value,
+        message: document.getElementById('messageText').value,
+      });
+    }
+    function getHistory() {
+      socket.emit('getHistory', { userId1: document.getElementById('h1').value, userId2: document.getElementById('h2').value });
+    }
+  </script>
+</body>
+</html>
